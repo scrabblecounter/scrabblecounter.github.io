@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrabble Counter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      width: 100%;
+      margin: auto;
+    }
+    .header {
+      background: lightseagreen;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .columns {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+    }
+    .column {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      min-height: 300px;
+      cursor: pointer;
+    }
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .buttons button, .undo-button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+    }
+    .undo-button:first-child {
+      border-right: 1px solid skyblue;
+    }
+    .undo-button:last-child {
+      border-left: 1px solid skyblue;
+    }
+    .reset-button {
+      width: 100%;
+      padding: 15px;
+      background: lightseagreen;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      width: 80%;
+      max-width: 300px;
+    }
+    .modal-content input {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 18px;
+      text-align: center;
+    }
+    .modal-content button {
+      width: 100%;
+      padding: 10px;
+      background: rgb(9, 54, 117);
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .green {
+      background-color: seagreen
+    }
+    .lightgreen {
+      background-color: skyblue;;
+    }
+    .blue {
+      background-color: lightskyblue;
+    }
+    .red {
+      background-color: lightcoral;
+    }
+    .gray {
+      background-color: lightgray;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header" onclick="setPlayerName(1)">Gracz 1</div>
+    <div class="header" onclick="setPlayerName(2)">Gracz 2</div>
+  </div>
+  <div class="container">
+    <div class="buttons">
+      <button class="gray" onclick="addSpecialMove(1, 'P')">P</button>
+      <button class="blue" onclick="addSpecialMove(1, 'W')">W</button>
+      <button class="red" onclick="addSpecialMove(1, 'X')">X</button>
+    </div>
+    <div class="buttons">
+      <button class="gray" onclick="addSpecialMove(2, 'P')">P</button>
+      <button class="blue" onclick="addSpecialMove(2, 'W')">W</button>
+      <button class="red" onclick="addSpecialMove(2, 'X')">X</button>
+    </div>
+  </div>
+  <div class="columns">
+    <div class="column" id="player1-scores" onclick="showModal(1)"></div>
+    <div class="column" id="player1-total"></div>
+    <div class="column" id="player2-scores" onclick="showModal(2)"></div>
+    <div class="column" id="player2-total"></div>
+  </div>
+  <div class="container">
+    <button class="undo-button lightgreen" onclick="undoMove(1)">Cofnij</button>
+    <button class="undo-button lightgreen" onclick="undoMove(2)">Cofnij</button>
+  </div>
+  <button class="reset-button" onclick="resetGame()">Reset</button>
+  
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <p>Podaj wynik ruchu:</p>
+      <input type="number" id="modal-input">
+      <button onclick="confirmMove()">OK</button>
+    </div>
+  </div>
+  
+  <script>
+    let scores = JSON.parse(localStorage.getItem('scrabbleScores')) || { 1: [], 2: [] };
+    let players = JSON.parse(localStorage.getItem('scrabblePlayers')) || { 1: "Gracz 1", 2: "Gracz 2" };
+    let currentPlayer = null;
+    
+    function updateUI() {
+      document.querySelector('.header:nth-child(1)').innerText = players[1];
+      document.querySelector('.header:nth-child(2)').innerText = players[2];
+      
+      [1, 2].forEach(player => {
+        const scoreEl = document.getElementById(`player${player}-scores`);
+        const totalEl = document.getElementById(`player${player}-total`);
+        let total = 0;
+        scoreEl.innerHTML = "";
+        totalEl.innerHTML = "";
+        
+        scores[player].forEach(score => {
+          total += isNaN(score) ? 0 : score;
+          scoreEl.innerHTML += `<div>${score}</div>`;
+          totalEl.innerHTML += `<div>${total}</div>`;
+        });
+      });
+    }
+    
+    function setPlayerName(player) {
+      const name = prompt("Podaj nazwę gracza:", players[player]);
+      if (name) {
+        players[player] = name;
+        localStorage.setItem('scrabblePlayers', JSON.stringify(players));
+        updateUI();
+      }
+    }
+    
+    function showModal(player) {
+      currentPlayer = player;
+      document.getElementById("modal").style.display = "flex";
+      document.getElementById("modal-input").value = "";
+      document.getElementById("modal-input").focus();
+    }
+    
+    function confirmMove() {
+      const value = parseInt(document.getElementById("modal-input").value) || 0;
+      scores[currentPlayer].push(value);
+      localStorage.setItem('scrabbleScores', JSON.stringify(scores));
+      document.getElementById("modal").style.display = "none";
+      updateUI();
+    }
+    
+    function addSpecialMove(player, move) {
+      scores[player].push(move);
+      localStorage.setItem('scrabbleScores', JSON.stringify(scores));
+      updateUI();
+    }
+    
+    function undoMove(player) {
+      if (scores[player].length > 0) {
+        scores[player].pop();
+        localStorage.setItem('scrabbleScores', JSON.stringify(scores));
+        updateUI();
+      }
+    }
+    
+    function resetGame() {
+      if (confirm("Czy na pewno chcesz zresetować grę?")) {
+        scores = { 1: [], 2: [] };
+        localStorage.setItem('scrabbleScores', JSON.stringify(scores));
+        updateUI();
+      }
+    }
+    
+    updateUI();
+  </script>
+</body>
+</html>
