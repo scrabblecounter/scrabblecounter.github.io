@@ -71,30 +71,46 @@
       align-items: center;
     }
     .modal-content {
-      background: white;
-      padding: 20px;
+      background: #ccc;
       border-radius: 8px;
       text-align: center;
       box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-      width: 80%;
+      width: 100%;
       max-width: 300px;
     }
-    .modal-content input {
-      width: 80%;
+    .modal-content .input-display {
+      font-size: 24px;
       padding: 10px;
-      margin: 10px 0;
-      font-size: 18px;
+      margin: 10px;
       text-align: center;
+      background: #f9f9f9;
     }
-    .modal-content button {
-      width: 100%;
-      padding: 10px;
-      background: rgb(9, 54, 117);
-      color: white;
+    .keyboard button {
+      width: 30%;
       border: none;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 5px;
+      padding: 20px;
+      margin-top: 4px;
+      font-size: 22px;
+      background: lightskyblue;
+    }
+    .keyboard .special {
+      background-color: lightgray;
+    }
+    .modal-controls button {
+      border: none;
+      padding: 20px;
+      margin-top: 16px;
+      margin-bottom: 16px;
+      font-size: 22px;
+      width: 46%;
+    }
+    .modal-controls .confirm {
+      background: lightseagreen;
+      color: white;
+    }
+    .modal-controls .cancel {
+      background: lightcoral;
+      color: white;
     }
     .green {
       background-color: seagreen
@@ -145,8 +161,25 @@
   <div id="modal" class="modal">
     <div class="modal-content">
       <p>Podaj wynik ruchu:</p>
-      <input type="number" id="modal-input">
-      <button onclick="confirmMove()">OK</button>
+      <div class="input-display" id="modal-display">0</div>
+      <div class="keyboard">
+        <button onclick="updateInput(1)">1</button>
+        <button onclick="updateInput(2)">2</button>
+        <button onclick="updateInput(3)">3</button>
+        <button onclick="updateInput(4)">4</button>
+        <button onclick="updateInput(5)">5</button>
+        <button onclick="updateInput(6)">6</button>
+        <button onclick="updateInput(7)">7</button>
+        <button onclick="updateInput(8)">8</button>
+        <button onclick="updateInput(9)">9</button>
+        <button onclick="toggleNegative()">-</button>
+        <button onclick="updateInput(0)">0</button>
+        <button class="special" onclick="clearInput()">Reset</button>
+      </div>
+      <div class="modal-controls">
+        <button class="confirm" onclick="confirmMove()">OK</button>
+        <button class="cancel" onclick="closeModal()">Anuluj</button>
+      </div>
     </div>
   </div>
   
@@ -185,17 +218,35 @@
     
     function showModal(player) {
       currentPlayer = player;
+      currentInput = "";
+      document.getElementById("modal-display").innerText = "0";
       document.getElementById("modal").style.display = "flex";
-      document.getElementById("modal-input").value = "";
-      document.getElementById("modal-input").focus();
     }
-    
+
+    function updateInput(value) {
+      currentInput += value;
+      document.getElementById("modal-display").innerText = currentInput;
+    }
+
+    function toggleNegative() {
+      currentInput = currentInput.startsWith("-") ? currentInput.slice(1) : "-" + currentInput;
+      document.getElementById("modal-display").innerText = currentInput;
+    }
+
+    function clearInput() {
+      currentInput = "";
+      document.getElementById("modal-display").innerText = "0";
+    }
+
     function confirmMove() {
-      const value = parseInt(document.getElementById("modal-input").value) || 0;
-      scores[currentPlayer].push(value);
+      scores[currentPlayer].push(parseInt(currentInput) || 0);
       localStorage.setItem('scrabbleScores', JSON.stringify(scores));
-      document.getElementById("modal").style.display = "none";
+      closeModal();
       updateUI();
+    }
+
+    function closeModal() {
+      document.getElementById("modal").style.display = "none";
     }
     
     function addSpecialMove(player, move) {
