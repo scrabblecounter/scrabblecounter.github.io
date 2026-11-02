@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scrabble Counter</title>
   <style>
+    * {
+      touch-action: manipulation;
+    }
     body {
       font-family: Arial, sans-serif;
       text-align: center;
@@ -17,10 +20,30 @@
       width: 100%;
       margin: auto;
     }
+    .player-headers {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      width: 100%;
+    }
     .header {
       background: lightseagreen;
       padding: 10px;
       cursor: pointer;
+    }
+    .swap-players {
+      background: lightseagreen;
+      border: none;
+      border-left: 1px solid rgba(255, 255, 255, 0.45);
+      border-right: 1px solid rgba(255, 255, 255, 0.45);
+      color: white;
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+      padding: 10px 14px;
+    }
+    .swap-players:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
     .columns {
       display: flex;
@@ -130,9 +153,10 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header" onclick="setPlayerName(1)">Gracz 1</div>
-    <div class="header" onclick="setPlayerName(2)">Gracz 2</div>
+  <div class="player-headers">
+    <div class="header" id="player1-name" onclick="setPlayerName(1)">Gracz 1</div>
+    <button type="button" id="swap-players" class="swap-players" onclick="swapPlayers()" aria-label="Zamień graczy miejscami" title="Zamień graczy miejscami">⇄</button>
+    <div class="header" id="player2-name" onclick="setPlayerName(2)">Gracz 2</div>
   </div>
   <div class="container">
     <div class="buttons">
@@ -188,8 +212,8 @@
     let currentPlayer = null;
     
     function updateUI() {
-      document.querySelector('.header:nth-child(1)').innerText = players[1];
-      document.querySelector('.header:nth-child(2)').innerText = players[2];
+      document.getElementById('player1-name').innerText = players[1];
+      document.getElementById('player2-name').innerText = players[2];
       
       [1, 2].forEach(player => {
         const scoreEl = document.getElementById(`player${player}-scores`);
@@ -204,8 +228,24 @@
           totalEl.innerHTML += `<div>${total}</div>`;
         });
       });
+
+      const swapButton = document.getElementById('swap-players');
+      const clearState = scores[1].length === 0 && scores[2].length === 0;
+      swapButton.disabled = !clearState;
+      swapButton.title = clearState
+        ? "Zamień graczy miejscami"
+        : "Zamiana dostępna tylko przy pustej grze";
     }
     
+    function swapPlayers() {
+      if (scores[1].length > 0 || scores[2].length > 0) return;
+      [players[1], players[2]] = [players[2], players[1]];
+      [scores[1], scores[2]] = [scores[2], scores[1]];
+      localStorage.setItem('scrabblePlayers', JSON.stringify(players));
+      localStorage.setItem('scrabbleScores', JSON.stringify(scores));
+      updateUI();
+    }
+
     function setPlayerName(player) {
       const name = prompt("Podaj nazwę gracza:", players[player]);
       if (name) {
@@ -255,7 +295,7 @@
     }
     
     function undoMove(player) {
-      if (scores[player].length > 0) {
+      if (scores[player].length > 0 && confirm("Czy na pewno chcesz cofnąć ostatni ruch?")) {
         scores[player].pop();
         localStorage.setItem('scrabbleScores', JSON.stringify(scores));
         updateUI();
