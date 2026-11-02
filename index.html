@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scrabble Counter</title>
   <style>
+    :root {
+      --bg: #f3f0e8;
+      --surface: #ffffff;
+      --ink: #1f2933;
+      --line: #e6e1d6;
+      --teal: #0f766e;
+      --teal-ink: #115e59;
+      --pass: #e7e5e4;
+      --pass-ink: #44403c;
+      --word: #dbeafe;
+      --word-ink: #1e40af;
+      --challenge: #ffe4e6;
+      --challenge-ink: #9f1239;
+      --undo: #e7f4f2;
+      --total: #f7fbfa;
+    }
     * {
       touch-action: manipulation;
     }
@@ -13,6 +29,8 @@
       text-align: center;
       margin: 0;
       padding: 0;
+      background: var(--bg);
+      color: var(--ink);
     }
     .container {
       display: grid;
@@ -26,15 +44,16 @@
       width: 100%;
     }
     .header {
-      background: lightseagreen;
+      background: var(--teal);
+      color: white;
       padding: 10px;
       cursor: pointer;
     }
     .swap-players {
-      background: lightseagreen;
+      background: var(--teal);
       border: none;
-      border-left: 1px solid rgba(255, 255, 255, 0.45);
-      border-right: 1px solid rgba(255, 255, 255, 0.45);
+      border-left: 1px solid rgba(255, 255, 255, 0.28);
+      border-right: 1px solid rgba(255, 255, 255, 0.28);
       color: white;
       cursor: pointer;
       font-size: 22px;
@@ -53,9 +72,13 @@
     .column {
       flex: 1;
       padding: 10px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--line);
+      background: var(--surface);
       min-height: 300px;
       cursor: pointer;
+    }
+    .column:nth-child(even) {
+      background: var(--total);
     }
     .buttons {
       display: flex;
@@ -69,15 +92,16 @@
       cursor: pointer;
     }
     .undo-button:first-child {
-      border-right: 1px solid skyblue;
+      border-right: 1px solid #cfe8e4;
     }
     .undo-button:last-child {
-      border-left: 1px solid skyblue;
+      border-left: 1px solid #cfe8e4;
     }
     .reset-button {
       width: 100%;
       padding: 15px;
-      background: lightseagreen;
+      background: var(--teal);
+      color: white;
       border: none;
       cursor: pointer;
       font-size: 18px;
@@ -89,15 +113,16 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(31, 41, 51, 0.46);
       justify-content: center;
       align-items: center;
     }
     .modal-content {
-      background: #ccc;
+      background: var(--surface);
+      color: var(--ink);
       border-radius: 8px;
       text-align: center;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0px 4px 10px rgba(31, 41, 51, 0.18);
       width: 100%;
       max-width: 300px;
     }
@@ -106,7 +131,8 @@
       padding: 10px;
       margin: 10px;
       text-align: center;
-      background: #f9f9f9;
+      background: var(--bg);
+      color: var(--ink);
     }
     .keyboard button {
       width: 30%;
@@ -114,10 +140,12 @@
       padding: 20px;
       margin-top: 4px;
       font-size: 22px;
-      background: lightskyblue;
+      background: #f8fafc;
+      color: var(--ink);
     }
     .keyboard .special {
-      background-color: lightgray;
+      background-color: var(--pass);
+      color: var(--pass-ink);
     }
     .modal-controls button {
       border: none;
@@ -128,27 +156,32 @@
       width: 46%;
     }
     .modal-controls .confirm {
-      background: lightseagreen;
+      background: var(--teal);
       color: white;
     }
     .modal-controls .cancel {
-      background: lightcoral;
-      color: white;
+      background: var(--challenge);
+      color: var(--challenge-ink);
     }
     .green {
-      background-color: seagreen
+      background-color: var(--teal);
+      color: white;
     }
     .lightgreen {
-      background-color: skyblue;;
+      background-color: var(--undo);
+      color: var(--teal-ink);
     }
     .blue {
-      background-color: lightskyblue;
+      background-color: var(--word);
+      color: var(--word-ink);
     }
     .red {
-      background-color: lightcoral;
+      background-color: var(--challenge);
+      color: var(--challenge-ink);
     }
     .gray {
-      background-color: lightgray;
+      background-color: var(--pass);
+      color: var(--pass-ink);
     }
   </style>
 </head>
