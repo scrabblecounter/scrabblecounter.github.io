@@ -4,8 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scrabble Counter</title>
+  <script>
+    try {
+      if (localStorage.getItem("scrabbleTheme") === "dark") {
+        document.documentElement.dataset.theme = "dark";
+      }
+      if (localStorage.getItem("scrabbleLanguage") === "en") {
+        document.documentElement.lang = "en";
+      }
+    } catch (error) {}
+  </script>
   <style>
     :root {
+      color-scheme: light;
       --bg: #f3f0e8;
       --surface: #ffffff;
       --ink: #1f2933;
@@ -20,82 +31,169 @@
       --challenge-ink: #9f1239;
       --undo: #e7f4f2;
       --total: #f7fbfa;
+      --key: #f8fafc;
+      --overlay: rgba(31, 41, 51, 0.46);
+      --undo-line: #cfe8e4;
+      --accent: #0f766e;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #1c1917;
+      --surface: #292524;
+      --ink: #f5f0e8;
+      --line: #44403c;
+      --teal: #0f766e;
+      --teal-ink: #99f6e4;
+      --pass: #44403c;
+      --pass-ink: #e7e5e4;
+      --word: #1e3a8a;
+      --word-ink: #dbeafe;
+      --challenge: #9f1239;
+      --challenge-ink: #ffe4e6;
+      --undo: #134e4a;
+      --total: #1a2422;
+      --key: #3f3a36;
+      --overlay: rgba(0, 0, 0, 0.62);
+      --undo-line: #115e59;
+      --accent: #5eead4;
     }
     * {
+      box-sizing: border-box;
       touch-action: manipulation;
+    }
+    html, body {
+      height: 100%;
     }
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 0;
-      padding: 0;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       background: var(--bg);
       color: var(--ink);
     }
-    .container {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+    button {
+      font-family: inherit;
+    }
+    .order-bar[hidden] {
+      display: none;
+    }
+    .order-button, .swap-players, .header {
+      background: var(--teal);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .order-button {
       width: 100%;
-      margin: auto;
+      padding: 2px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+      font-size: 22px;
+      line-height: 1;
     }
     .player-headers {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      display: flex;
       width: 100%;
+      background: var(--teal);
     }
     .header {
-      background: var(--teal);
-      color: white;
-      padding: 10px;
-      cursor: pointer;
+      flex: 1;
+      min-width: 0;
+      padding: 12px 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 16px;
     }
     .swap-players {
-      background: var(--teal);
-      border: none;
       border-left: 1px solid rgba(255, 255, 255, 0.28);
       border-right: 1px solid rgba(255, 255, 255, 0.28);
-      color: white;
-      cursor: pointer;
       font-size: 22px;
       line-height: 1;
       padding: 10px 14px;
     }
-    .swap-players:disabled {
+    .swap-players:disabled, .order-button:disabled, .settings-option:disabled {
       opacity: 0.4;
       cursor: default;
     }
+    .special-row, .undo-row {
+      display: flex;
+      width: 100%;
+    }
+    .special-group {
+      flex: 1;
+      display: flex;
+      min-width: 0;
+    }
+    .move-button {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      padding: 14px 0;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .move-button.pass { background: var(--pass); color: var(--pass-ink); }
+    .move-button.word { background: var(--word); color: var(--word-ink); }
+    .move-button.challenge { background: var(--challenge); color: var(--challenge-ink); }
+    .sheet {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
     .columns {
       display: flex;
-      flex-direction: row;
-      width: 100%;
+      gap: 2px;
+      min-height: 100%;
     }
-    .column {
+    .player-pair {
       flex: 1;
+      display: flex;
+      min-width: 0;
+    }
+    .score-column, .total-column {
+      flex: 1;
+      min-width: 0;
       padding: 10px;
       border: 1px solid var(--line);
-      background: var(--surface);
-      min-height: 300px;
-      cursor: pointer;
     }
-    .column:nth-child(even) {
+    .score-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: var(--surface);
+      color: inherit;
+      cursor: pointer;
+      text-align: center;
+    }
+    .total-column {
       background: var(--total);
     }
-    .buttons {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
+    .entry {
+      display: block;
+      font-size: 16px;
+      line-height: 24px;
     }
-    .buttons button, .undo-button {
+    body.compact .entry {
+      font-size: 13px;
+      line-height: 18px;
+    }
+    .undo-button {
       flex: 1;
-      padding: 10px;
+      min-width: 0;
       border: none;
+      background: var(--undo);
+      color: var(--teal-ink);
+      padding: 14px 4px;
       cursor: pointer;
+      font-size: 16px;
     }
-    .undo-button:first-child {
-      border-right: 1px solid #cfe8e4;
-    }
-    .undo-button:last-child {
-      border-left: 1px solid #cfe8e4;
+    .undo-button.divider {
+      border-right: 1px solid var(--undo-line);
     }
     .reset-button {
       width: 100%;
@@ -106,244 +204,917 @@
       cursor: pointer;
       font-size: 18px;
     }
+    .settings-bar {
+      background: var(--bg);
+    }
+    .settings-button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      line-height: 0;
+    }
+    button:active:not(:disabled) {
+      opacity: 0.75;
+    }
     .modal {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(31, 41, 51, 0.46);
+      inset: 0;
+      background: var(--overlay);
       justify-content: center;
       align-items: center;
+      padding: 24px;
+      z-index: 2;
+    }
+    .modal.open {
+      display: flex;
     }
     .modal-content {
       background: var(--surface);
       color: var(--ink);
       border-radius: 8px;
       text-align: center;
-      box-shadow: 0px 4px 10px rgba(31, 41, 51, 0.18);
+      box-shadow: 0 4px 10px rgba(31, 41, 51, 0.18);
       width: 100%;
       max-width: 300px;
+      overflow: hidden;
     }
-    .modal-content .input-display {
+    .input-display, .name-input {
       font-size: 24px;
       padding: 10px;
       margin: 10px;
       text-align: center;
       background: var(--bg);
       color: var(--ink);
-    }
-    .keyboard button {
-      width: 30%;
       border: none;
-      padding: 20px;
-      margin-top: 4px;
-      font-size: 22px;
-      background: #f8fafc;
-      color: var(--ink);
+      font-family: inherit;
     }
-    .keyboard .special {
-      background-color: var(--pass);
+    .name-input {
+      display: block;
+      width: calc(100% - 20px);
+    }
+    .prompt, .order-title {
+      margin: 0;
+      padding: 16px 16px 0;
+      font-size: 16px;
+    }
+    .order-hint {
+      margin: 4px 0 8px;
+      color: var(--ink);
+      font-size: 13px;
+      opacity: 0.75;
+    }
+    .confirm-message {
+      margin: 0;
+      padding: 20px 16px 0;
+      font-size: 18px;
+      line-height: 26px;
+    }
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 0 8px 4px;
+    }
+    .keypad button {
+      border: none;
+      padding: 16px 0;
+      font-size: 22px;
+      background: var(--key);
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .keypad .special {
+      background: var(--pass);
       color: var(--pass-ink);
+      font-size: 16px;
+    }
+    .modal-controls {
+      display: flex;
+      gap: 8px;
+      padding: 16px 8px;
     }
     .modal-controls button {
+      flex: 1;
       border: none;
-      padding: 20px;
-      margin-top: 16px;
-      margin-bottom: 16px;
+      padding: 16px 8px;
       font-size: 22px;
-      width: 46%;
+      cursor: pointer;
     }
-    .modal-controls .confirm {
+    .confirm {
       background: var(--teal);
       color: white;
     }
-    .modal-controls .cancel {
+    .cancel {
       background: var(--challenge);
       color: var(--challenge-ink);
     }
-    .green {
-      background-color: var(--teal);
-      color: white;
+    .settings-option, .settings-close {
+      display: block;
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 18px 16px;
+      font-size: 16px;
+      cursor: pointer;
     }
-    .lightgreen {
-      background-color: var(--undo);
-      color: var(--teal-ink);
+    .settings-option {
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
     }
-    .blue {
-      background-color: var(--word);
-      color: var(--word-ink);
+    .settings-close {
+      color: var(--accent);
     }
-    .red {
-      background-color: var(--challenge);
-      color: var(--challenge-ink);
+    .order-list {
+      touch-action: none;
     }
-    .gray {
-      background-color: var(--pass);
-      color: var(--pass-ink);
+    .order-row {
+      height: 56px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      touch-action: none;
+      user-select: none;
+      cursor: grab;
+    }
+    .order-row.dragging {
+      background: var(--undo);
+      z-index: 2;
+      cursor: grabbing;
+    }
+    .order-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
+      font-size: 18px;
+    }
+    .order-grip {
+      color: var(--accent);
+      font-size: 22px;
+      margin-left: 12px;
     }
   </style>
 </head>
 <body>
-  <div class="player-headers">
-    <div class="header" id="player1-name" onclick="setPlayerName(1)">Gracz 1</div>
-    <button type="button" id="swap-players" class="swap-players" onclick="swapPlayers()" aria-label="Zamień graczy miejscami" title="Zamień graczy miejscami">⇄</button>
-    <div class="header" id="player2-name" onclick="setPlayerName(2)">Gracz 2</div>
+  <div id="order-bar" class="order-bar" hidden>
+    <button type="button" id="reorder-players" class="order-button" data-action="reorder">⇄</button>
   </div>
-  <div class="container">
-    <div class="buttons">
-      <button class="gray" onclick="addSpecialMove(1, 'P')">P</button>
-      <button class="blue" onclick="addSpecialMove(1, 'W')">W</button>
-      <button class="red" onclick="addSpecialMove(1, 'X')">X</button>
+  <div id="player-headers" class="player-headers"></div>
+  <div id="special-row" class="special-row"></div>
+  <div id="sheet" class="sheet">
+    <div id="columns" class="columns"></div>
+  </div>
+  <div id="undo-row" class="undo-row"></div>
+  <button type="button" id="reset-game" class="reset-button" data-action="reset"></button>
+  <div class="settings-bar">
+    <button type="button" id="settings-button" class="settings-button" data-action="settings">
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.6.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="settings-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button type="button" id="settings-language" class="settings-option" data-action="language"></button>
+      <button type="button" id="settings-theme" class="settings-option" data-action="theme"></button>
+      <button type="button" id="settings-add" class="settings-option" data-action="add-player"></button>
+      <button type="button" id="settings-remove" class="settings-option" data-action="remove-player"></button>
+      <button type="button" id="settings-close" class="settings-close" data-action="close-settings"></button>
     </div>
-    <div class="buttons">
-      <button class="gray" onclick="addSpecialMove(2, 'P')">P</button>
-      <button class="blue" onclick="addSpecialMove(2, 'W')">W</button>
-      <button class="red" onclick="addSpecialMove(2, 'X')">X</button>
+  </div>
+
+  <div id="reorder-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <p id="order-title" class="order-title"></p>
+      <p id="order-hint" class="order-hint"></p>
+      <div id="order-list" class="order-list"></div>
+      <div class="modal-controls">
+        <button type="button" id="order-save" class="confirm" data-action="save-order"></button>
+        <button type="button" class="cancel" data-action="close-reorder"></button>
+      </div>
     </div>
   </div>
-  <div class="columns">
-    <div class="column" id="player1-scores" onclick="showModal(1)"></div>
-    <div class="column" id="player1-total"></div>
-    <div class="column" id="player2-scores" onclick="showModal(2)"></div>
-    <div class="column" id="player2-total"></div>
-  </div>
-  <div class="container">
-    <button class="undo-button lightgreen" onclick="undoMove(1)">Cofnij</button>
-    <button class="undo-button lightgreen" onclick="undoMove(2)">Cofnij</button>
-  </div>
-  <button class="reset-button" onclick="resetGame()">Reset</button>
-  
-  <div id="modal" class="modal">
+
+  <div id="score-modal" class="modal" role="dialog" aria-modal="true">
     <div class="modal-content">
       <div class="input-display" id="modal-display">0</div>
-      <div class="keyboard">
-        <button onclick="updateInput(1)">1</button>
-        <button onclick="updateInput(2)">2</button>
-        <button onclick="updateInput(3)">3</button>
-        <button onclick="updateInput(4)">4</button>
-        <button onclick="updateInput(5)">5</button>
-        <button onclick="updateInput(6)">6</button>
-        <button onclick="updateInput(7)">7</button>
-        <button onclick="updateInput(8)">8</button>
-        <button onclick="updateInput(9)">9</button>
-        <button onclick="toggleNegative()">-</button>
-        <button onclick="updateInput(0)">0</button>
-        <button class="special" onclick="clearInput()">Reset</button>
+      <div class="keypad">
+        <button type="button" data-action="key" data-key="1">1</button>
+        <button type="button" data-action="key" data-key="2">2</button>
+        <button type="button" data-action="key" data-key="3">3</button>
+        <button type="button" data-action="key" data-key="4">4</button>
+        <button type="button" data-action="key" data-key="5">5</button>
+        <button type="button" data-action="key" data-key="6">6</button>
+        <button type="button" data-action="key" data-key="7">7</button>
+        <button type="button" data-action="key" data-key="8">8</button>
+        <button type="button" data-action="key" data-key="9">9</button>
+        <button type="button" data-action="key" data-key="-">-</button>
+        <button type="button" data-action="key" data-key="0">0</button>
+        <button type="button" id="key-clear" class="special" data-action="key" data-key="clear"></button>
       </div>
       <div class="modal-controls">
-        <button class="confirm" onclick="confirmMove()">OK</button>
-        <button class="cancel" onclick="closeModal()">Anuluj</button>
+        <button type="button" id="score-ok" class="confirm" data-action="confirm-score"></button>
+        <button type="button" id="score-cancel" class="cancel" data-action="close-score"></button>
       </div>
     </div>
   </div>
-  
+
+  <div id="name-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <p id="name-prompt" class="prompt"></p>
+      <input id="name-input" class="name-input" type="text" autocomplete="off">
+      <div class="modal-controls">
+        <button type="button" id="name-ok" class="confirm" data-action="confirm-name"></button>
+        <button type="button" class="cancel" data-action="close-name"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <p id="confirm-message" class="confirm-message"></p>
+      <div class="modal-controls">
+        <button type="button" id="confirm-ok" class="confirm" data-action="accept-confirm"></button>
+        <button type="button" id="confirm-cancel" class="cancel" data-action="close-confirm"></button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    let scores = JSON.parse(localStorage.getItem('scrabbleScores')) || { 1: [], 2: [] };
-    let players = JSON.parse(localStorage.getItem('scrabblePlayers')) || { 1: "Gracz 1", 2: "Gracz 2" };
-    let currentPlayer = null;
-    
-    function updateUI() {
-      document.getElementById('player1-name').innerText = players[1];
-      document.getElementById('player2-name').innerText = players[2];
-      
-      [1, 2].forEach(player => {
-        const scoreEl = document.getElementById(`player${player}-scores`);
-        const totalEl = document.getElementById(`player${player}-total`);
-        let total = 0;
-        scoreEl.innerHTML = "";
-        totalEl.innerHTML = "";
-        
-        scores[player].forEach(score => {
-          total += isNaN(score) ? 0 : score;
-          scoreEl.innerHTML += `<div>${score}</div>`;
-          totalEl.innerHTML += `<div>${total}</div>`;
-        });
+    const PLAYER_IDS = [1, 2, 3, 4];
+    const MAX_PLAYERS = 4;
+    const MIN_PLAYERS = 1;
+    const ORDER_ROW_HEIGHT = 56;
+    const SCORES_KEY = "scrabbleScores";
+    const PLAYERS_KEY = "scrabblePlayers";
+    const LANGUAGE_KEY = "scrabbleLanguage";
+    const THEME_KEY = "scrabbleTheme";
+
+    const copy = {
+      pl: {
+        swap: "Zamień graczy miejscami",
+        swapDisabled: "Zamiana dostępna tylko przy pustej grze",
+        undo: "Cofnij",
+        reset: "Reset",
+        switchLanguage: "English",
+        changeLanguage: (language) => `Zmień język na ${language}`,
+        changeTheme: (theme) => `Zmień motyw na ${theme}`,
+        close: "Zamknij",
+        settings: "Ustawienia",
+        addPlayer: "Dodaj gracza",
+        removePlayer: "Usuń gracza",
+        reorder: "Zmień kolejność graczy",
+        reorderDisabled: "Zmiana kolejności dostępna tylko przy pustej grze",
+        reorderHint: "Przeciągnij, aby zmienić kolejność",
+        save: "Zapisz",
+        namePrompt: "Podaj nazwę gracza:",
+        undoConfirm: "Czy na pewno chcesz cofnąć ostatni ruch?",
+        resetConfirm: "Czy na pewno chcesz zresetować grę?",
+        ok: "OK",
+        cancel: "Anuluj",
+        addPoints: "Dodaj punkty",
+        clearEntry: "Reset wpisu",
+        keypadReset: "Reset",
+        emptyScores: (name) => `Wyniki ${name}`,
+        scoreList: (name, moves) => `${name}: ${moves}`
+      },
+      en: {
+        swap: "Swap players",
+        swapDisabled: "Swap is available only when the game is empty",
+        undo: "Undo",
+        reset: "Reset",
+        switchLanguage: "Polski",
+        changeLanguage: (language) => `Change language to ${language}`,
+        changeTheme: (theme) => `Change theme to ${theme}`,
+        close: "Close",
+        settings: "Settings",
+        addPlayer: "Add player",
+        removePlayer: "Remove player",
+        reorder: "Change player order",
+        reorderDisabled: "Reordering is available only when the game is empty",
+        reorderHint: "Drag to change the order",
+        save: "Save",
+        namePrompt: "Enter player name:",
+        undoConfirm: "Are you sure you want to undo the last move?",
+        resetConfirm: "Are you sure you want to reset the game?",
+        ok: "OK",
+        cancel: "Cancel",
+        addPoints: "Add points",
+        clearEntry: "Clear entry",
+        keypadReset: "Reset",
+        emptyScores: (name) => `${name} scores`,
+        scoreList: (name, moves) => `${name}: ${moves}`
+      }
+    };
+
+    const defaultNames = {
+      pl: { 1: "Gracz 1", 2: "Gracz 2", 3: "Gracz 3", 4: "Gracz 4" },
+      en: { 1: "Player 1", 2: "Player 2", 3: "Player 3", 4: "Player 4" }
+    };
+
+    const themeLabels = {
+      pl: { light: "Jasny", dark: "Ciemny" },
+      en: { light: "Light", dark: "Dark" }
+    };
+
+    const specialMoves = [
+      { code: "P", tone: "pass" },
+      { code: "W", tone: "word" },
+      { code: "X", tone: "challenge" }
+    ];
+
+    let scores = { 1: [], 2: [] };
+    let players = { 1: "Gracz 1", 2: "Gracz 2" };
+    let language = "pl";
+    let theme = "light";
+    let scorePlayer = null;
+    let currentInput = "";
+    let namePlayer = null;
+    let confirmRequest = null;
+    let orderDraft = [];
+    let dragState = null;
+    let wakeLock = null;
+
+    function text() {
+      return copy[language];
+    }
+
+    function playerIdsOf(map) {
+      const ids = [];
+      for (const id of PLAYER_IDS) {
+        if (typeof map[id] === "string") ids.push(id);
+        else break;
+      }
+      return ids;
+    }
+
+    function defaultPlayerName(id) {
+      return defaultNames[language][id];
+    }
+
+    function localizeDefaultName(name) {
+      for (const id of PLAYER_IDS) {
+        if (name === defaultNames.pl[id] || name === defaultNames.en[id]) {
+          return defaultNames[language][id];
+        }
+      }
+      return name;
+    }
+
+    function isMove(value) {
+      if (typeof value === "string") return true;
+      return typeof value === "number" && Number.isFinite(value);
+    }
+
+    function parseStoredScores(raw) {
+      if (!raw) return { 1: [], 2: [] };
+      try {
+        const parsed = JSON.parse(raw);
+        const next = {};
+        let found = false;
+        for (const id of PLAYER_IDS) {
+          if (!(String(id) in parsed)) break;
+          const value = parsed[String(id)];
+          next[id] = Array.isArray(value) ? value.filter(isMove) : [];
+          found = true;
+        }
+        return found ? next : { 1: [], 2: [] };
+      } catch (error) {
+        return { 1: [], 2: [] };
+      }
+    }
+
+    function parseStoredPlayers(raw) {
+      const fallback = { 1: defaultNames[language][1], 2: defaultNames[language][2] };
+      if (!raw) return fallback;
+      try {
+        const parsed = JSON.parse(raw);
+        const next = {};
+        for (const id of PLAYER_IDS) {
+          if (!(String(id) in parsed)) break;
+          const value = parsed[String(id)];
+          next[id] = typeof value === "string" && value ? value : (fallback[id] || defaultPlayerName(id));
+        }
+        return next[1] ? next : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function moveLabel(move) {
+      if (move === "W" && language === "en") return "E";
+      return String(move);
+    }
+
+    function contribution(move) {
+      if (typeof move === "number") return Number.isNaN(move) ? 0 : move;
+      const numeric = Number(move);
+      return Number.isNaN(numeric) ? 0 : numeric;
+    }
+
+    function totalsFor(moves) {
+      const totals = [];
+      let total = 0;
+      for (const move of moves) {
+        total += contribution(move);
+        totals.push(total);
+      }
+      return totals;
+    }
+
+    function isGameClear() {
+      return Object.values(scores).every((moves) => !moves || moves.length === 0);
+    }
+
+    function moveItem(items, from, to) {
+      const next = items.slice();
+      if (from === to || from < 0 || to < 0 || from >= next.length || to >= next.length) return next;
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    }
+
+    function save() {
+      localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+      localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+      localStorage.setItem(LANGUAGE_KEY, language);
+      localStorage.setItem(THEME_KEY, theme);
+    }
+
+    function load() {
+      language = localStorage.getItem(LANGUAGE_KEY) === "en" ? "en" : "pl";
+      theme = localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
+      players = parseStoredPlayers(localStorage.getItem(PLAYERS_KEY));
+      const ids = playerIdsOf(players);
+      const localized = {};
+      for (const id of ids) localized[id] = localizeDefaultName(players[id]);
+      players = localized;
+      scores = parseStoredScores(localStorage.getItem(SCORES_KEY));
+      for (const id of ids) {
+        if (!Array.isArray(scores[id])) scores[id] = [];
+      }
+    }
+
+    function applyTheme() {
+      document.documentElement.dataset.theme = theme === "dark" ? "dark" : "";
+      if (theme !== "dark") delete document.documentElement.dataset.theme;
+      document.documentElement.lang = language;
+    }
+
+    function button(className, label, action, player) {
+      const element = document.createElement("button");
+      element.type = "button";
+      element.className = className;
+      element.textContent = label;
+      element.dataset.action = action;
+      if (player != null) element.dataset.player = String(player);
+      return element;
+    }
+
+    function updateUI(options = {}) {
+      const t = text();
+      const ids = playerIdsOf(players);
+      const clear = isGameClear();
+      document.body.classList.toggle("compact", ids.length > 2);
+      applyTheme();
+
+      const orderBar = document.getElementById("order-bar");
+      const reorder = document.getElementById("reorder-players");
+      orderBar.hidden = ids.length < 3;
+      reorder.disabled = !clear;
+      reorder.title = clear ? t.reorderHint : t.reorderDisabled;
+      reorder.setAttribute("aria-label", t.reorder);
+
+      const headers = document.getElementById("player-headers");
+      headers.replaceChildren();
+      ids.forEach((id, index) => {
+        if (index === 1 && ids.length === 2) {
+          const swap = button("swap-players", "⇄", "swap");
+          swap.disabled = !clear;
+          swap.title = clear ? t.swap : t.swapDisabled;
+          swap.setAttribute("aria-label", t.swap);
+          headers.appendChild(swap);
+        }
+        const name = button("header", players[id], "name", id);
+        name.setAttribute("aria-label", players[id]);
+        headers.appendChild(name);
       });
 
-      const swapButton = document.getElementById('swap-players');
-      const clearState = scores[1].length === 0 && scores[2].length === 0;
-      swapButton.disabled = !clearState;
-      swapButton.title = clearState
-        ? "Zamień graczy miejscami"
-        : "Zamiana dostępna tylko przy pustej grze";
+      const specials = document.getElementById("special-row");
+      specials.replaceChildren();
+      for (const id of ids) {
+        const group = document.createElement("div");
+        group.className = "special-group";
+        for (const move of specialMoves) {
+          const label = moveLabel(move.code);
+          const control = button(`move-button ${move.tone}`, label, "special", id);
+          control.dataset.move = move.code;
+          control.setAttribute("aria-label", `${label}, ${players[id]}`);
+          group.appendChild(control);
+        }
+        specials.appendChild(group);
+      }
+
+      const columns = document.getElementById("columns");
+      columns.replaceChildren();
+      for (const id of ids) {
+        const pair = document.createElement("div");
+        pair.className = "player-pair";
+        const moves = scores[id] || [];
+        const labels = moves.map(moveLabel);
+        const scoreColumn = button("score-column", "", "score", id);
+        scoreColumn.replaceChildren();
+        for (const label of labels) {
+          const entry = document.createElement("span");
+          entry.className = "entry";
+          entry.textContent = label;
+          scoreColumn.appendChild(entry);
+        }
+        scoreColumn.title = t.addPoints;
+        scoreColumn.setAttribute(
+          "aria-label",
+          labels.length === 0 ? t.emptyScores(players[id]) : t.scoreList(players[id], labels.join(", "))
+        );
+
+        const totalColumn = document.createElement("div");
+        totalColumn.className = "total-column";
+        const totals = totalsFor(moves);
+        for (const total of totals) {
+          const entry = document.createElement("span");
+          entry.className = "entry";
+          entry.textContent = String(total);
+          totalColumn.appendChild(entry);
+        }
+        if (totals.length > 0) totalColumn.setAttribute("aria-label", totals.join(", "));
+        pair.append(scoreColumn, totalColumn);
+        columns.appendChild(pair);
+      }
+
+      const undoRow = document.getElementById("undo-row");
+      undoRow.replaceChildren();
+      ids.forEach((id, index) => {
+        const undo = button(index < ids.length - 1 ? "undo-button divider" : "undo-button", t.undo, "undo", id);
+        undo.setAttribute("aria-label", `${t.undo}, ${players[id]}`);
+        undoRow.appendChild(undo);
+      });
+
+      document.getElementById("reset-game").textContent = t.reset;
+      document.getElementById("settings-button").setAttribute("aria-label", t.settings);
+      document.getElementById("settings-modal").setAttribute("aria-label", t.settings);
+      document.getElementById("settings-language").textContent = t.changeLanguage(t.switchLanguage);
+      document.getElementById("settings-theme").textContent = t.changeTheme(themeLabels[language][theme === "light" ? "dark" : "light"]);
+      const addButton = document.getElementById("settings-add");
+      const removeButton = document.getElementById("settings-remove");
+      addButton.textContent = t.addPlayer;
+      removeButton.textContent = t.removePlayer;
+      addButton.disabled = ids.length >= MAX_PLAYERS;
+      removeButton.disabled = ids.length <= MIN_PLAYERS;
+      document.getElementById("settings-close").textContent = t.close;
+
+      document.getElementById("order-title").textContent = t.reorder;
+      document.getElementById("order-hint").textContent = t.reorderHint;
+      document.getElementById("order-save").textContent = t.save;
+      document.querySelector("#reorder-modal .cancel").textContent = t.cancel;
+      document.getElementById("key-clear").textContent = t.keypadReset;
+      document.getElementById("key-clear").setAttribute("aria-label", t.clearEntry);
+      document.getElementById("score-ok").textContent = t.ok;
+      document.getElementById("score-cancel").textContent = t.cancel;
+      document.getElementById("score-modal").setAttribute("aria-label", t.addPoints);
+      document.getElementById("name-prompt").textContent = t.namePrompt;
+      document.getElementById("name-ok").textContent = t.ok;
+      document.querySelector("#name-modal .cancel").textContent = t.cancel;
+      document.getElementById("confirm-ok").textContent = t.ok;
+      document.getElementById("confirm-cancel").textContent = t.cancel;
+
+      if (options.scroll) {
+        const sheet = document.getElementById("sheet");
+        requestAnimationFrame(() => {
+          sheet.scrollTop = sheet.scrollHeight;
+        });
+      }
     }
-    
+
+    function addMove(player, move) {
+      scores[player] = [...(scores[player] || []), move];
+      save();
+      updateUI({ scroll: true });
+    }
+
     function swapPlayers() {
-      if (scores[1].length > 0 || scores[2].length > 0) return;
-      [players[1], players[2]] = [players[2], players[1]];
-      [scores[1], scores[2]] = [scores[2], scores[1]];
-      localStorage.setItem('scrabblePlayers', JSON.stringify(players));
-      localStorage.setItem('scrabbleScores', JSON.stringify(scores));
+      const ids = playerIdsOf(players);
+      if (ids.length !== 2 || !isGameClear()) return;
+      players = { 1: players[2] || "", 2: players[1] || "" };
+      scores = { 1: scores[2] || [], 2: scores[1] || [] };
+      save();
       updateUI();
     }
 
-    function setPlayerName(player) {
-      const name = prompt("Podaj nazwę gracza:", players[player]);
-      if (name) {
-        players[player] = name;
-        localStorage.setItem('scrabblePlayers', JSON.stringify(players));
-        updateUI();
-      }
+    function addPlayer() {
+      const ids = playerIdsOf(players);
+      if (ids.length >= MAX_PLAYERS) return;
+      const id = ids.length + 1;
+      players[id] = defaultPlayerName(id);
+      scores[id] = [];
+      save();
+      updateUI();
     }
-    
-    function showModal(player) {
-      currentPlayer = player;
+
+    function removePlayer() {
+      const ids = playerIdsOf(players);
+      if (ids.length <= MIN_PLAYERS) return;
+      const id = ids[ids.length - 1];
+      delete players[id];
+      delete scores[id];
+      save();
+      updateUI();
+    }
+
+    function openScore(player) {
+      scorePlayer = player;
       currentInput = "";
-      document.getElementById("modal-display").innerText = "0";
-      document.getElementById("modal").style.display = "flex";
+      document.getElementById("modal-display").textContent = "0";
+      document.getElementById("score-modal").classList.add("open");
     }
 
-    function updateInput(value) {
-      currentInput += value;
-      document.getElementById("modal-display").innerText = currentInput;
+    function closeScore() {
+      scorePlayer = null;
+      document.getElementById("score-modal").classList.remove("open");
     }
 
-    function toggleNegative() {
-      currentInput = currentInput.startsWith("-") ? currentInput.slice(1) : "-" + currentInput;
-      document.getElementById("modal-display").innerText = currentInput;
+    function pressKey(key) {
+      if (key === "clear") currentInput = "";
+      else if (key === "-") currentInput = currentInput.startsWith("-") ? currentInput.slice(1) : `-${currentInput}`;
+      else currentInput += key;
+      document.getElementById("modal-display").textContent = currentInput === "" ? "0" : currentInput;
     }
 
-    function clearInput() {
-      currentInput = "";
-      document.getElementById("modal-display").innerText = "0";
+    function confirmScore() {
+      if (scorePlayer == null) return;
+      const player = scorePlayer;
+      closeScore();
+      addMove(player, parseInt(currentInput, 10) || 0);
     }
 
-    function confirmMove() {
-      scores[currentPlayer].push(parseInt(currentInput) || 0);
-      localStorage.setItem('scrabbleScores', JSON.stringify(scores));
-      closeModal();
+    function openName(player) {
+      if (typeof players[player] !== "string") return;
+      namePlayer = player;
+      const input = document.getElementById("name-input");
+      input.value = players[player];
+      document.getElementById("name-modal").classList.add("open");
+      input.focus();
+      input.select();
+    }
+
+    function closeName() {
+      namePlayer = null;
+      document.getElementById("name-modal").classList.remove("open");
+    }
+
+    function confirmName() {
+      if (namePlayer == null) return;
+      const name = document.getElementById("name-input").value;
+      if (name) players[namePlayer] = name;
+      closeName();
+      if (name) save();
       updateUI();
     }
 
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
+    function openSettings() {
+      document.getElementById("settings-modal").classList.add("open");
     }
-    
-    function addSpecialMove(player, move) {
-      scores[player].push(move);
-      localStorage.setItem('scrabbleScores', JSON.stringify(scores));
+
+    function closeSettings() {
+      document.getElementById("settings-modal").classList.remove("open");
+    }
+
+    function toggleLanguage() {
+      language = language === "pl" ? "en" : "pl";
+      const next = {};
+      for (const id of playerIdsOf(players)) next[id] = localizeDefaultName(players[id]);
+      players = next;
+      save();
       updateUI();
     }
-    
-    function undoMove(player) {
-      if (scores[player].length > 0 && confirm("Czy na pewno chcesz cofnąć ostatni ruch?")) {
-        scores[player].pop();
-        localStorage.setItem('scrabbleScores', JSON.stringify(scores));
-        updateUI();
-      }
+
+    function toggleTheme() {
+      theme = theme === "light" ? "dark" : "light";
+      save();
+      updateUI();
     }
-    
-    function resetGame() {
-      if (confirm("Czy na pewno chcesz zresetować grę?")) {
-        scores = { 1: [], 2: [] };
-        localStorage.setItem('scrabbleScores', JSON.stringify(scores));
-        updateUI();
-      }
+
+    function requestUndo(player) {
+      if ((scores[player] || []).length === 0) return;
+      confirmRequest = { kind: "undo", player };
+      document.getElementById("confirm-message").textContent = text().undoConfirm;
+      document.getElementById("confirm-modal").classList.add("open");
     }
-    
+
+    function requestReset() {
+      confirmRequest = { kind: "reset" };
+      document.getElementById("confirm-message").textContent = text().resetConfirm;
+      document.getElementById("confirm-modal").classList.add("open");
+    }
+
+    function closeConfirm() {
+      confirmRequest = null;
+      document.getElementById("confirm-modal").classList.remove("open");
+    }
+
+    function acceptConfirm() {
+      if (!confirmRequest) return;
+      if (confirmRequest.kind === "reset") {
+        const next = {};
+        for (const id of playerIdsOf(players)) next[id] = [];
+        scores = next;
+      } else {
+        const player = confirmRequest.player;
+        scores[player] = (scores[player] || []).slice(0, -1);
+      }
+      closeConfirm();
+      save();
+      updateUI();
+    }
+
+    function renderOrderList() {
+      const list = document.getElementById("order-list");
+      list.replaceChildren();
+      orderDraft.forEach((id, index) => {
+        const row = document.createElement("div");
+        row.className = "order-row";
+        row.dataset.index = String(index);
+        row.setAttribute("aria-label", players[id] || "");
+        const name = document.createElement("span");
+        name.className = "order-name";
+        name.textContent = players[id] || "";
+        const grip = document.createElement("span");
+        grip.className = "order-grip";
+        grip.textContent = "≡";
+        grip.setAttribute("aria-hidden", "true");
+        row.append(name, grip);
+        row.addEventListener("pointerdown", startDrag);
+        list.appendChild(row);
+      });
+    }
+
+    function openReorder() {
+      if (playerIdsOf(players).length < 3 || !isGameClear()) return;
+      orderDraft = playerIdsOf(players).slice();
+      dragState = null;
+      renderOrderList();
+      document.getElementById("reorder-modal").classList.add("open");
+    }
+
+    function closeReorder() {
+      dragState = null;
+      document.getElementById("reorder-modal").classList.remove("open");
+    }
+
+    function saveOrder() {
+      if (!isGameClear()) {
+        closeReorder();
+        return;
+      }
+      const nextPlayers = {};
+      const nextScores = {};
+      orderDraft.forEach((oldId, index) => {
+        const id = index + 1;
+        nextPlayers[id] = players[oldId] || "";
+        nextScores[id] = scores[oldId] || [];
+      });
+      players = nextPlayers;
+      scores = nextScores;
+      closeReorder();
+      save();
+      updateUI();
+    }
+
+    function dragDestination(origin, dy) {
+      return Math.max(0, Math.min(orderDraft.length - 1, origin + Math.round(dy / ORDER_ROW_HEIGHT)));
+    }
+
+    function layoutDrag(dy, destination) {
+      const rows = document.querySelectorAll("#order-list .order-row");
+      rows.forEach((row, index) => {
+        let offset = 0;
+        if (index === dragState.origin) offset = dy;
+        else if (dragState.origin < destination && index > dragState.origin && index <= destination) offset = -ORDER_ROW_HEIGHT;
+        else if (dragState.origin > destination && index < dragState.origin && index >= destination) offset = ORDER_ROW_HEIGHT;
+        row.style.transform = `translateY(${offset}px)`;
+        row.style.zIndex = index === dragState.origin ? "2" : "0";
+        row.classList.toggle("dragging", index === dragState.origin);
+      });
+    }
+
+    function startDrag(event) {
+      if (event.button != null && event.button !== 0) return;
+      event.preventDefault();
+      const row = event.currentTarget;
+      dragState = {
+        origin: Number(row.dataset.index),
+        startY: event.clientY,
+        pointerId: event.pointerId
+      };
+      row.setPointerCapture(event.pointerId);
+      row.addEventListener("pointermove", moveDrag);
+      row.addEventListener("pointerup", finishDrag);
+      row.addEventListener("pointercancel", finishDrag);
+      layoutDrag(0, dragState.origin);
+    }
+
+    function moveDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const dy = event.clientY - dragState.startY;
+      layoutDrag(dy, dragDestination(dragState.origin, dy));
+    }
+
+    function finishDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const dy = event.clientY - dragState.startY;
+      const destination = dragDestination(dragState.origin, dy);
+      if (destination !== dragState.origin) {
+        orderDraft = moveItem(orderDraft, dragState.origin, destination);
+      }
+      dragState = null;
+      renderOrderList();
+    }
+
+    function closeTopModal() {
+      if (document.getElementById("reorder-modal").classList.contains("open")) closeReorder();
+      else if (document.getElementById("confirm-modal").classList.contains("open")) closeConfirm();
+      else if (document.getElementById("name-modal").classList.contains("open")) closeName();
+      else if (document.getElementById("score-modal").classList.contains("open")) closeScore();
+      else if (document.getElementById("settings-modal").classList.contains("open")) closeSettings();
+    }
+
+    async function requestWakeLock() {
+      try {
+        if (navigator.wakeLock && document.visibilityState === "visible") {
+          wakeLock = await navigator.wakeLock.request("screen");
+        }
+      } catch (error) {}
+    }
+
+    document.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target : event.target.parentElement;
+      const control = target && target.closest("[data-action]");
+      if (!control || control.disabled) return;
+      const action = control.dataset.action;
+      const player = Number(control.dataset.player);
+      if (action === "swap") swapPlayers();
+      else if (action === "reorder") openReorder();
+      else if (action === "name") openName(player);
+      else if (action === "special") addMove(player, control.dataset.move);
+      else if (action === "score") openScore(player);
+      else if (action === "undo") requestUndo(player);
+      else if (action === "reset") requestReset();
+      else if (action === "settings") openSettings();
+      else if (action === "close-settings") closeSettings();
+      else if (action === "language") toggleLanguage();
+      else if (action === "theme") toggleTheme();
+      else if (action === "add-player") addPlayer();
+      else if (action === "remove-player") removePlayer();
+      else if (action === "key") pressKey(control.dataset.key);
+      else if (action === "confirm-score") confirmScore();
+      else if (action === "close-score") closeScore();
+      else if (action === "confirm-name") confirmName();
+      else if (action === "close-name") closeName();
+      else if (action === "accept-confirm") acceptConfirm();
+      else if (action === "close-confirm") closeConfirm();
+      else if (action === "save-order") saveOrder();
+      else if (action === "close-reorder") closeReorder();
+    });
+
+    document.getElementById("name-input").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        confirmName();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeTopModal();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") requestWakeLock();
+    });
+    document.addEventListener("pointerdown", () => {
+      if (!wakeLock) requestWakeLock();
+    }, { once: true });
+
+    load();
     updateUI();
+    requestWakeLock();
   </script>
 </body>
 </html>
